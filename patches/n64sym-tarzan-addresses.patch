@@ -1,0 +1,47 @@
+diff --git a/src/n64sym.cpp b/src/n64sym.cpp
+index 6e57180..807a36b 100644
+--- a/src/n64sym.cpp
++++ b/src/n64sym.cpp
+@@ -138,6 +138,7 @@ bool CN64Sym::LoadBinary(const char *binPath)
+         }
+         
+         m_HeaderSize = entryPoint - 0x1000;
++        fprintf(stderr, "n64sym headerSize=%08X entry=%08X bootAdjust applied before subtract\n", m_HeaderSize, entryPoint);
+     }
+ 
+     return true;
+@@ -290,7 +291,7 @@ void CN64Sym::DumpResults()
+     default:
+         for(auto& result : m_Results)
+         {
+-            Output("%08X %s\n", result.address, result.name);
++            Output("%08X %08X %s\n", result.address, result.size, result.name);
+         }
+         break;
+     }
+@@ -685,6 +686,7 @@ bool CN64Sym::TestSignatureSymbol(CSignatureFile& sigFile, size_t nSymbol, uint3
+         search_result_t result;
+         result.address = m_HeaderSize + offset;
+         result.size = sigFile.GetSymbolSize(nSymbol);
++        if (m_Results.size() < 8) fprintf(stderr, "match off=%08X addr=%08X size=%u\n", offset, result.address, result.size);
+         sigFile.GetSymbolName(nSymbol, result.name, sizeof(result.name));
+         AddResult(result);
+ 
+@@ -720,7 +722,7 @@ bool CN64Sym::TestSignatureSymbol(CSignatureFile& sigFile, size_t nSymbol, uint3
+                 }
+                 break;
+             case R_MIPS_26:
+-                relocMap[relocName].address = (m_HeaderSize & 0xF0000000) + ((opcode & 0x03FFFFFF) << 2);
++                relocMap[relocName].address = 0x80000000u + ((opcode & 0x03FFFFFF) << 2);
+                 break;
+             }
+ 
+@@ -932,7 +934,7 @@ void CN64Sym::AddRelocationResults(CElfContext* elf, const char* block, const ch
+         
+         if(relType == R_MIPS_26 && (opcode >> 26) == 0x0C)
+         {
+-            uint32_t jalTarget = m_HeaderSize | ((opcode & 0x3FFFFFF) * 4);
++            uint32_t jalTarget = 0x80000000u | ((opcode & 0x03FFFFFF) << 2);
+             
+             search_result_t result;
+             result.address = jalTarget;

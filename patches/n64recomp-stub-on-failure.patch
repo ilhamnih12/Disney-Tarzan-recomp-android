@@ -1,0 +1,46 @@
+diff --git a/src/main.cpp b/src/main.cpp
+index 59e8f5f..7b48a3e 100644
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -740,6 +740,10 @@ int main(int argc, char** argv) {
+         if (!func.ignored && func.words.size() != 0) {
+             fmt::print(func_header_file,
+                 "void {}(uint8_t* rdram, recomp_context* ctx);\n", func.name);
++            // Stubs are provided by the Tarzan runtime. Emit a declaration only.
++            if (func.stubbed) {
++                continue;
++            }
+             bool result;
+             const auto& func_section = context.sections[func.section_index];
+             // Apply strict patch mode validation if enabled.
+@@ -782,10 +786,13 @@ int main(int argc, char** argv) {
+                 result = recompile_single_function(context, i, config.recomp_include, config.output_func_path / (func.name + ".c"), static_funcs_by_section);
+             }
+             if (result == false) {
+-                fmt::print(stderr, "Error recompiling {}\n", func.name);
+-                std::exit(EXIT_FAILURE);
++                fmt::print(stderr, "Error recompiling {}, emitting stub\n", func.name);
++                std::ofstream stub_file{ config.output_func_path / (func.name + ".c") };
++                fmt::print(stub_file,
++                    "{}\n\nRECOMP_FUNC void {}(uint8_t* rdram, recomp_context* ctx) {{\n    recomp_unimplemented(rdram, ctx, 0x{:08X}u);\n}}\n",
++                    config.recomp_include, func.name, func.vram);
+             }
+-        } else if (func.reimplemented) {
++        } else if (func.reimplemented || func.ignored) {
+             fmt::print(func_header_file,
+                        "void {}(uint8_t* rdram, recomp_context* ctx);\n", func.name);
+         }
+@@ -886,8 +893,11 @@ int main(int argc, char** argv) {
+             }
+ 
+             if (result == false) {
+-                fmt::print(stderr, "Error recompiling {}\n", new_func.name);
+-                std::exit(EXIT_FAILURE);
++                fmt::print(stderr, "Error recompiling static {}, emitting stub\n", new_func.name);
++                std::ofstream stub_file{ config.output_func_path / (new_func.name + ".c") };
++                fmt::print(stub_file,
++                    "{}\n\nRECOMP_FUNC void {}(uint8_t* rdram, recomp_context* ctx) {{\n    recomp_unimplemented(rdram, ctx, 0x{:08X}u);\n}}\n",
++                    config.recomp_include, new_func.name, new_func.vram);
+             }
+         }
+     }
