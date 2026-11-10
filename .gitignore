@@ -1,0 +1,31 @@
+# Local game input and generated game data — never distribute in an APK.
+*.z64
+*.v64
+*.n64
+*.elf
+*.sav
+*.eep
+*.sra
+*.fla
+*.mpk
+*.nrm
+*.rtz
+/work/
+/.work/
+/generated/
+/rom-work/
+/artifacts/
+__pycache__/
+*.pyc
+# Existing user-provided archive is intentionally preserved, not newly added.
+# Toolchains and build outputs remain local.
+/.toolchains/
+**/build/
+**/.gradle/
+**/.cxx/
+local.properties
+*.apk
+*.aab
+*.jks
+*.keystore
+.DS_Store
